@@ -68,7 +68,7 @@ Follow these steps to set up and run the application on your local machine.
 
 1. Clone the Repository
    ```bash
-   git clone https://github.com/PromtEngineer/localGPT-Vision.git
+   git clone https://github.com/muzanxdem/localGPT-Vision.git
    cd localGPT-Vision
    ```
 
