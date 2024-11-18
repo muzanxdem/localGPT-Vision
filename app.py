@@ -355,4 +355,4 @@ def get_indexed_files(session_id):
         return jsonify({"success": False, "message": "Session not found."})
 
 if __name__ == '__main__':
-    app.run(port=5050, debug=True)
+    app.run(port=5050, host='0.0.0.0', debug=True)
