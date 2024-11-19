@@ -22,7 +22,7 @@ class RAGModelManager:
         self.current_session_id = None
         self.current_model = None
         self.logger = get_logger(__name__)
-
+    
     def load_model_for_session(self, session_id, index_path):
         """
         Loads a RAG model for a specific session, unloading any previously loaded model.
@@ -30,11 +30,11 @@ class RAGModelManager:
         # If trying to load the same session that's already loaded, do nothing
         if session_id == self.current_session_id and self.current_model is not None:
             return self.current_model
-
+            
         # Unload current model if one exists
         if self.current_model is not None:
             self.unload_current_model()
-
+            
         # Load new model
         try:
             self.current_model = RAGMultiModalModel.from_index(index_path)
@@ -44,7 +44,7 @@ class RAGModelManager:
         except Exception as e:
             self.logger.error(f"Error loading model for session {session_id}: {e}")
             raise
-
+    
     def unload_current_model(self):
         """
         Unloads the current model from GPU memory
@@ -58,13 +58,13 @@ class RAGModelManager:
             self.current_model = None
             self.current_session_id = None
             self.log_gpu_memory("After unloading model")
-
+    
     def get_current_model(self):
         """
         Returns the currently loaded model
         """
         return self.current_model
-
+    
     @contextmanager
     def session_scope(self, session_id, index_path):
         """
@@ -72,7 +72,7 @@ class RAGModelManager:
         """
         previous_session = self.current_session_id
         previous_model = self.current_model
-
+        
         try:
             # Load the requested model
             model = self.load_model_for_session(session_id, index_path)
@@ -80,7 +80,7 @@ class RAGModelManager:
         finally:
             # If we were using a different model before, restore it
             if previous_session != session_id and previous_model is not None:
-                self.load_model_for_session(previous_session,
+                self.load_model_for_session(previous_session, 
                     os.path.join(app.config['INDEX_FOLDER'], previous_session))
 
     def log_gpu_memory(self, context=""):
@@ -199,17 +199,17 @@ def chat():
                     index_name = session_id
                     index_path = os.path.join(app.config['INDEX_FOLDER'], index_name)
                     indexer_model = session.get('indexer_model', 'vidore/colpali')
-
+                    
                     # Unload current model before indexing
                     model_manager.unload_current_model()
-
+                    
                     RAG = index_documents(session_folder, index_name=index_name, index_path=index_path, indexer_model=indexer_model)
                     if RAG is None:
                         raise ValueError("Indexing failed: RAG model is None")
-
+                    
                     # Load the newly indexed model
                     model_manager.load_model_for_session(session_id, index_path)
-
+                    
                     session['index_name'] = index_name
                     session['session_folder'] = session_folder
                     indexed_files.extend(uploaded_files)
@@ -236,7 +236,7 @@ def chat():
             query = request.form['query']
 
             try:
-                generation_model = session.get('generation_model', 'qwen')
+                generation_model = session.get('generation_model', 'ollama-llama-vision')
                 resized_height = session.get('resized_height', 280)
                 resized_width = session.get('resized_width', 280)
 
@@ -315,7 +315,7 @@ def chat():
                 name = data.get('session_name', 'Untitled Session')
                 chat_sessions.append({'id': s_id, 'name': name})
 
-    model_choice = session.get('model', 'qwen')
+    model_choice = session.get('model', 'ollama-llama-vision')
     resized_height = session.get('resized_height', 280)
     resized_width = session.get('resized_width', 280)
 
@@ -365,7 +365,7 @@ def delete_session(session_id):
         if os.path.exists(session_folder):
             import shutil
             shutil.rmtree(session_folder)
-
+        
         session_images_folder = os.path.join('static', 'images', session_id)
         if os.path.exists(session_images_folder):
             import shutil
@@ -383,8 +383,8 @@ def delete_session(session_id):
 @app.route('/settings', methods=['GET', 'POST'])
 def settings():
     if request.method == 'POST':
-        indexer_model = request.form.get('indexer_model', 'vidore/colpali')
-        generation_model = request.form.get('generation_model', 'qwen')
+        indexer_model = request.form.get('indexer_model', 'vidore/colqwen2-v0.1')
+        generation_model = request.form.get('generation_model', 'ollama-llama-vision')
         resized_height = request.form.get('resized_height', 280)
         resized_width = request.form.get('resized_width', 280)
         session['indexer_model'] = indexer_model
@@ -396,8 +396,8 @@ def settings():
         flash("Settings updated.", "success")
         return redirect(url_for('chat'))
     else:
-        indexer_model = session.get('indexer_model', 'vidore/colpali')
-        generation_model = session.get('generation_model', 'qwen')
+        indexer_model = session.get('indexer_model', 'vidore/colqwen2-v0.1')
+        generation_model = session.get('generation_model', 'ollama-llama-vision')
         resized_height = session.get('resized_height', 280)
         resized_width = session.get('resized_width', 280)
         return render_template('settings.html',
@@ -410,7 +410,7 @@ def settings():
 def new_session():
     # Unload current model before creating new session
     model_manager.unload_current_model()
-
+    
     session_id = str(uuid.uuid4())
     session['session_id'] = session_id
     session_files = os.listdir(app.config['SESSION_FOLDER'])
